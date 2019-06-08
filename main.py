@@ -15,8 +15,15 @@ falling = False
 jump_distance = 0
 
 screen = pygame.display.set_mode(size)
+pygame.mixer.music.load("BGM.wav")
+#Patakas World
+#www.dl-sounds.com
 
+pygame.mixer.music.play(-1)
+
+pygame.display.set_caption("Puzzle Box")
 girl = pygame.image.load("Girl_Right.gif")
+
 # Source: opengameart.org
 # Author: Mandi Paugh
 
@@ -59,6 +66,6 @@ while 1:
     if jump_distance == 0 and falling == True:
         falling = False
 
-    pygame.draw.line(screen, (255, 255, 255), (1, 899), (1599, 899), 5)
+    pygame.draw.line(screen, white, (1, 899), (1599, 899), 5)
     screen.blit(girl, sprite_coordinates)
     pygame.display.flip()
