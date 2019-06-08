@@ -5,6 +5,8 @@ from pygame.locals import *
 
 pygame.init()
 
+path = "./characters/Jill/"
+
 size = width, height = 1600, 900
 black = 0, 0, 0
 white = 255, 255, 255
@@ -13,6 +15,8 @@ jump_height = 75
 jumping = False
 falling = False
 jump_distance = 0
+face_direction = 1
+#0: Left  1: Right
 
 screen = pygame.display.set_mode(size)
 pygame.mixer.music.load("BGM.wav")
@@ -22,10 +26,12 @@ pygame.mixer.music.load("BGM.wav")
 pygame.mixer.music.play(-1)
 
 pygame.display.set_caption("Puzzle Box")
-girl = pygame.image.load("Girl_Right.gif")
+character = pygame.image.load(path + "Right.gif")
 
 # Source: opengameart.org
-# Author: Mandi Paugh
+# Name from source: Sara and Star
+# Artist: Mandi Paugh
+
 
 sprite_coordinates = [0, 850]
 
@@ -36,17 +42,31 @@ while 1:
         elif event.type == KEYDOWN:
             if event.key == K_ESCAPE:
                 sys.exit()
+
+            elif event.key == K_c:
+                if path == "./characters/Jill/":
+                    path = "./characters/Jack/"
+                elif path == "./characters/Jack/":
+                    path = "./characters/Jill/"
+
+                if face_direction == 0:
+                    character = pygame.image.load(path + "Left.gif")
+                elif face_direction == 1:
+                    character = pygame.image.load(path + "Right.gif")
+
     screen.fill(black)
     keys = pygame.key.get_pressed()
     if keys[K_a] == True:
         sprite_coordinates[0] -= 1
-        girl = pygame.image.load("Girl_Left.gif")
+        face_direction = 0
+        character = pygame.image.load(path + "Left.gif")
         if sprite_coordinates[0] == -1:
             sprite_coordinates[0] = 0
 
     elif keys[K_d] == True:
         sprite_coordinates[0] += 1
-        girl = pygame.image.load("Girl_Right.gif")
+        face_direction = 1
+        character = pygame.image.load(path + "Right.gif")
         if sprite_coordinates[0] == 1568:
             sprite_coordinates[0] = 1567
 
@@ -67,5 +87,5 @@ while 1:
         falling = False
 
     pygame.draw.line(screen, white, (1, 899), (1599, 899), 5)
-    screen.blit(girl, sprite_coordinates)
+    screen.blit(character, sprite_coordinates)
     pygame.display.flip()
