@@ -17,6 +17,7 @@ backgroundIntro = 56,142,142
 gameDisplay = pygame.display.set_mode((width,height))
 pygame.display.set_caption('Puzzle Game')
 clock = pygame.time.Clock()
+gameObjs = []
 
 def button(msg,x,y,w,h,ic,ac,action=None):
     mouse = pygame.mouse.get_pos()
@@ -48,6 +49,7 @@ def message_display(text):
     time.sleep(2)
     game()
 
+
 def game_intro():
     intro = True
     while intro:
@@ -65,8 +67,16 @@ def game_intro():
         pygame.display.update()
         clock.tick(15)
 
+
 def quitgame():
     quit()
+
+def load_level(filename):
+    f = open(filename)
+    player_location = f.readline()
+    for i in range(1, 50):
+        for j in range(1, 30):
+            gameObjs.append()
 
 
 from pygame.locals import *
@@ -81,7 +91,7 @@ def game():
     black = 0, 0, 0
     white = 255, 255, 255
 
-    jumping = False
+    #jumping = False
     face_direction = 1
     # 0: Left  1: Right
 
@@ -111,18 +121,23 @@ def game():
             self.falling = False
             self.jump_distance = 0
             self.jump_height = 75
-
+            self.speedX = 0
+            self.speedY = 0
+            self.accelY = 0
+            self.max_accel = 30
+            self.max_speed = 5
 
         def check_collision(self, sprite1, sprite2):
             collided = pygame.sprite.collide_rect(sprite1, sprite2)
-            if collided and self.rect.y < sprite2.rect.y and self.falling == True:
+            if collided and self.rect.y < sprite2.rect.y and self.falling:
                 # using this as there is no other instance where both should be true at the same time
-                self.jumping = True
+                self.jumping = False
+                self.falling = False
                 self.jump_distance = 0
 
-            elif collided and self.rect.x <= sprite2.rect.x:
+            elif collided and self.rect.x <= sprite2.rect.x and not (self.rect.y <= sprite2.rect.y):
                 self.update_position(-5, 0)
-            elif collided and self.rect.x >= sprite2.rect.x:
+            elif collided and self.rect.x >= sprite2.rect.x and not (self.rect.y <= sprite2.rect.y):
                 self.update_position(5, 0)
 
         def update_position(self, offset_x, offset_y):
@@ -145,7 +160,6 @@ def game():
                 return True
 
         def fall(self):
-
             if pygame.sprite.collide_rect(self, block) and self.rect.y < block.rect.y - 40:
                 self.falling = False
                 self.jump_distance = 0
@@ -158,9 +172,7 @@ def game():
                 self.falling = True
                 return
 
-
-
-    class Block(pygame.sprite.Sprite):
+    class GameObj(pygame.sprite.Sprite):
         def __init__(self):
             pygame.sprite.Sprite.__init__(self)
             self.img = pygame.image.load("./sprites/block24x.png")
@@ -180,7 +192,7 @@ def game():
     player = Player()
     player.update_position(0, height - 48)
 
-    block = Block()
+    block = GameObj()
     block.update_position(200, height - 48)
 
     while 1:
