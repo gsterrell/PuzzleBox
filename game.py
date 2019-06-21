@@ -192,6 +192,7 @@ def game():
     player = Player()
     player.update_position(0, height - 48)
 
+    #changed block class to GameObj class
     block = GameObj()
     block.update_position(200, height - 48)
 
