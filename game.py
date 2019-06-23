@@ -17,7 +17,7 @@ backgroundIntro = 56,142,142
 gameDisplay = pygame.display.set_mode((width,height))
 pygame.display.set_caption('Puzzle Game')
 clock = pygame.time.Clock()
-gameObjs = []
+
 
 def button(msg,x,y,w,h,ic,ac,action=None):
     mouse = pygame.mouse.get_pos()
@@ -71,13 +71,6 @@ def game_intro():
 def quitgame():
     quit()
 
-def load_level(filename):
-    f = open(filename)
-    player_location = f.readline()
-    for i in range(1, 50):
-        for j in range(1, 30):
-            gameObjs.append()
-
 
 from pygame.locals import *
 
@@ -90,6 +83,9 @@ def game():
     size = width, height = 1280, 720
     black = 0, 0, 0
     white = 255, 255, 255
+    gameObjs = []
+    current_level = "level1.lvl"
+    unit_size = 24
 
     #jumping = False
     face_direction = 1
@@ -104,18 +100,19 @@ def game():
 
     pygame.display.set_caption("Puzzle Box")
 
-    block_coordinates = [200, height - 48]
+    #block_coordinates = [200, height - 48]
 
     class Player(pygame.sprite.Sprite):
 
         def __init__(self):
             pygame.sprite.Sprite.__init__(self)
+            starting_position = 500, 500
             self.img = pygame.image.load(path + "Right.gif")
             # Source: opengameart.org
             # Name from source: Sara and Star
             # Artist: Mandi Paugh
             self.rect = self.img.get_rect()
-            self.coordinates = 0, 0
+            self.coordinates = starting_position
             self.rect.x, self.rect.y = self.coordinates
             self.jumping = False
             self.falling = False
@@ -127,18 +124,20 @@ def game():
             self.max_accel = 30
             self.max_speed = 5
 
-        def check_collision(self, sprite1, sprite2):
-            collided = pygame.sprite.collide_rect(sprite1, sprite2)
-            if collided and self.rect.y < sprite2.rect.y and self.falling:
-                # using this as there is no other instance where both should be true at the same time
-                self.jumping = False
-                self.falling = False
-                self.jump_distance = 0
-
-            elif collided and self.rect.x <= sprite2.rect.x and not (self.rect.y <= sprite2.rect.y):
-                self.update_position(-5, 0)
-            elif collided and self.rect.x >= sprite2.rect.x and not (self.rect.y <= sprite2.rect.y):
-                self.update_position(5, 0)
+        def check_collision(self, game_obj):
+            collided = pygame.sprite.collide_rect(self, game_obj)
+            if collided:
+                if game_obj.type == 'floor' or 'switch' or 'wall':
+                    if self.rect.y <= game_obj.rect.y:
+                        # using this as there is no other instance where both should be true at the same time
+                        self.update_position(0, -3)
+                        self.jumping = False
+                        self.falling = False
+                        self.jump_distance = 0
+                    elif (self.rect.x <= game_obj.rect.x) and (self.rect.y > game_obj.rect.y-47):
+                        self.update_position(-5, 0)
+                    elif (self.rect.x >= game_obj.rect.x) and (self.rect.y > game_obj.rect.y-47):
+                        self.update_position(5, 0)
 
         def update_position(self, offset_x, offset_y):
             self.rect.x += offset_x
@@ -160,41 +159,68 @@ def game():
                 return True
 
         def fall(self):
-            if pygame.sprite.collide_rect(self, block) and self.rect.y < block.rect.y - 40:
-                self.falling = False
-                self.jump_distance = 0
-            elif self.rect.y > height - 48:
-                self.rect.y = height - 48
-                self.jump_distance = 0
-                self.falling = False
-            else:
-                self.update_position(0,3)
-                self.falling = True
-                return
+            for each in gameObjs:
+                if self.rect.y < each.rect.y - unit_size:
+                    self.falling = False
+                    self.jump_distance = 0
+                if self.rect.y > height - 48:
+                    self.rect.y = height - 48
+                    self.jump_distance = 0
+                    self.falling = False
+                else:
+                    self.update_position(0,3)
+                    self.falling = True
+                    return
 
     class GameObj(pygame.sprite.Sprite):
-        def __init__(self):
+        def __init__(self, image_path, posx, posy):
             pygame.sprite.Sprite.__init__(self)
-            self.img = pygame.image.load("./sprites/block24x.png")
+            self.img = pygame.image.load(image_path)
             self.rect = self.img.get_rect()
-            self.coordinates = 0, 0
+            self.coordinates = posx, posy
             self.rect.x, self.rect.y = self.coordinates
+            self.type = ""
 
         def update_position(self, offset_x, offset_y):
             self.rect.x += offset_x
             self.rect.y += offset_y
             self.coordinates = self.rect.x, self.rect.y
 
+        def set_type(self, the_type):
+            self.type = the_type
+
+        def get_type(self):
+            return self.type
+
+    def load_level(the_level):
+        gameObjs.clear()
+        level = open("./levels/" + the_level)
+        for i, line in enumerate(level):
+            if i == 0:
+                Player.starting_position = line
+            elif i == 31:
+                current_level = line
+            else:
+                for j, word in enumerate(line.split()):
+                    if word != 'empty':
+                        new_object = GameObj("./sprites/" + word + ".png", unit_size*(j), unit_size*(i-1))
+                        new_object.set_type(word)
+                        gameObjs.append(new_object)
+
+
     # Source: opengameart.org
     # Name from source: Sara and Star
     # Artist: Mandi Paugh
 
+    # load the level information
+    load_level(current_level)
+
     player = Player()
-    player.update_position(0, height - 48)
+    #player.update_position(0, height - 48)
 
     #changed block class to GameObj class
-    block = GameObj()
-    block.update_position(200, height - 48)
+    #block = GameObj()
+    #block.update_position(200, height - 48)
 
     while 1:
         for event in pygame.event.get():
@@ -239,11 +265,14 @@ def game():
         elif not keys[K_j]:
             player.fall()
 
-        player.check_collision(player, block)
+        for level_object in gameObjs:
+            player.check_collision(level_object)
 
         fps = pygame.time.Clock()
         fps.tick(60)
         pygame.draw.line(screen, white, (0, 720), (1280, 720), 5)
         screen.blit(player.img, player.coordinates)
-        screen.blit(block.img, block_coordinates)
+        #screen.blit(block.img, block_coordinates)
+        for thing in gameObjs:
+            screen.blit(thing.img, thing.coordinates)
         pygame.display.flip()
