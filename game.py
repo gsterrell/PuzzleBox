@@ -78,14 +78,16 @@ from pygame.locals import *
 def game():
     pygame.init()
 
-    path = "./characters/Jill/"
+    characterpath = "./characters/Jill/"
 
     size = width, height = 1280, 720
     black = 0, 0, 0
-    white = 255, 255, 255
     gameObjs = []
     current_level = "level1.lvl"
     unit_size = 24
+    fullupdate = True
+    green = (0, 255, 0)
+    blue = (0, 0, 128)
 
     #jumping = False
     face_direction = 1
@@ -107,7 +109,7 @@ def game():
         def __init__(self):
             pygame.sprite.Sprite.__init__(self)
             starting_position = 500, 500
-            self.img = pygame.image.load(path + "Right.gif")
+            self.img = pygame.image.load(characterpath + "Right.gif")
             # Source: opengameart.org
             # Name from source: Sara and Star
             # Artist: Mandi Paugh
@@ -134,15 +136,21 @@ def game():
                         self.jumping = False
                         self.falling = False
                         self.jump_distance = 0
-                    elif (self.rect.x <= game_obj.rect.x) and (self.rect.y > game_obj.rect.y-47):
+                        return True
+                    elif (self.rect.x <= game_obj.rect.x) and (self.rect.y > (game_obj.rect.y - 47)):
                         self.update_position(-5, 0)
-                    elif (self.rect.x >= game_obj.rect.x) and (self.rect.y > game_obj.rect.y-47):
+                        return True
+                    elif (self.rect.x >= game_obj.rect.x) and (self.rect.y > (game_obj.rect.y - 47)):
                         self.update_position(5, 0)
+                        return True
+                    return False
 
         def update_position(self, offset_x, offset_y):
+            pygame.draw.rect(screen, black, pygame.Rect(self.rect.x, self.rect.y, 32, 48))
             self.rect.x += offset_x
             self.rect.y += offset_y
             self.coordinates = self.rect.x, self.rect.y
+            screen.blit(self.img, self.coordinates)
 
         def jump(self):
             if self.falling == True:
@@ -222,6 +230,8 @@ def game():
     #block = GameObj()
     #block.update_position(200, height - 48)
 
+    starttime = pygame.time.get_ticks()
+    frames = 0
     while 1:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -231,32 +241,30 @@ def game():
                     sys.exit()
 
                 elif event.key == K_c:
-                    if path == "./characters/Jill/":
-                        path = "./characters/Jack/"
-                    elif path == "./characters/Jack/":
-                        path = "./characters/Jill/"
+                    if characterpath == "./characters/Jill/":
+                        characterpath = "./characters/Jack/"
+                    elif characterpath == "./characters/Jack/":
+                        characterpath = "./characters/Jill/"
 
                     if face_direction == 0:
-                        player.img = pygame.image.load(path + "Left.gif")
+                        player.img = pygame.image.load(characterpath + "Left.gif")
                     elif face_direction == 1:
-                        player.img = pygame.image.load(path + "Right.gif")
+                        player.img = pygame.image.load(characterpath + "Right.gif")
+                elif event.key == K_r:
+                    fullupdate = True
 
-                elif event.key == K_j:
-                    jumping = True
-
-        screen.fill(black)
         keys = pygame.key.get_pressed()
         if keys[K_a]:
             player.update_position(-5, 0)
             face_direction = 0
-            player.img = pygame.image.load(path + "Left.gif")
+            player.img = pygame.image.load(characterpath + "Left.gif")
             if player.coordinates[0] <= 0:
                 player.update_position(5, 0)
 
         elif keys[K_d]:
             player.update_position(5, 0)
             face_direction = 1
-            player.img = pygame.image.load(path + "Right.gif")
+            player.img = pygame.image.load(characterpath + "Right.gif")
             if player.coordinates[0] >= width - 32:
                 player.update_position(-5, 0)
 
@@ -266,13 +274,28 @@ def game():
             player.fall()
 
         for level_object in gameObjs:
-            player.check_collision(level_object)
-
+            collided = player.check_collision(level_object)
+            if collided:
+                screen.blit(level_object.img, level_object.coordinates)
         fps = pygame.time.Clock()
-        fps.tick(60)
-        pygame.draw.line(screen, white, (0, 720), (1280, 720), 5)
-        screen.blit(player.img, player.coordinates)
-        #screen.blit(block.img, block_coordinates)
-        for thing in gameObjs:
-            screen.blit(thing.img, thing.coordinates)
-        pygame.display.flip()
+        fps.tick(80)
+
+        font = pygame.font.Font('freesansbold.ttf', 32)
+
+        currtime = pygame.time.get_ticks()
+        frames += 1
+        text = font.render(str(frames / ((currtime-starttime) / 1000)), True, green, blue)
+        screen.blit(text, (100, 100))
+
+        if fullupdate == True:
+            screen.fill(black)
+            screen.blit(player.img, player.coordinates)
+            # screen.blit(block.img, block_coordinates)
+
+            for thing in gameObjs:
+                screen.blit(thing.img, thing.coordinates)
+
+            pygame.display.flip()
+            fullupdate = False
+        else:
+            pygame.display.update([pygame.Rect(player.rect.x - 10, player.rect.y - 10, 60, 70), pygame.Rect(100, 100, 500, 100)])
