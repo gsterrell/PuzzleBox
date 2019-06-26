@@ -18,7 +18,6 @@ gameDisplay = pygame.display.set_mode((width,height))
 pygame.display.set_caption('Puzzle Game')
 clock = pygame.time.Clock()
 
-
 def button(msg,x,y,w,h,ic,ac,action=None):
     mouse = pygame.mouse.get_pos()
     click = pygame.mouse.get_pressed()
@@ -143,14 +142,12 @@ def game():
                     elif (self.rect.x >= game_obj.rect.x) and (self.rect.y > (game_obj.rect.y - 47)):
                         self.update_position(5, 0)
                         return True
-                    return False
+            return False
 
         def update_position(self, offset_x, offset_y):
-            pygame.draw.rect(screen, black, pygame.Rect(self.rect.x, self.rect.y, 32, 48))
             self.rect.x += offset_x
             self.rect.y += offset_y
             self.coordinates = self.rect.x, self.rect.y
-            screen.blit(self.img, self.coordinates)
 
         def jump(self):
             if self.falling == True:
@@ -253,6 +250,7 @@ def game():
                 elif event.key == K_r:
                     fullupdate = True
 
+        pygame.draw.rect(screen, black, player.rect)
         keys = pygame.key.get_pressed()
         if keys[K_a]:
             player.update_position(-5, 0)
@@ -277,6 +275,7 @@ def game():
             collided = player.check_collision(level_object)
             if collided:
                 screen.blit(level_object.img, level_object.coordinates)
+
         fps = pygame.time.Clock()
         fps.tick(80)
 
@@ -298,4 +297,5 @@ def game():
             pygame.display.flip()
             fullupdate = False
         else:
-            pygame.display.update([pygame.Rect(player.rect.x - 10, player.rect.y - 10, 60, 70), pygame.Rect(100, 100, 500, 100)])
+            screen.blit(player.img, player.coordinates)
+            pygame.display.update([pygame.Rect(player.rect.x - 10, player.rect.y - 6, 52, 60), pygame.Rect(100, 100, 500, 100)])
