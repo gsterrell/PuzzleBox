@@ -128,20 +128,24 @@ def game():
         def check_collision(self, game_obj):
             collided = pygame.sprite.collide_rect(self, game_obj)
             if collided:
-                if game_obj.type == 'floor' or 'switch' or 'wall':
-                    if self.rect.y <= game_obj.rect.y:
+                if game_obj.get_type() in ['floor', 'switch', 'wall']:
+                    if (self.rect.y + 45 <= game_obj.rect.y) and self.falling:
                         # using this as there is no other instance where both should be true at the same time
                         self.update_position(0, -3)
                         self.jumping = False
                         self.falling = False
                         self.jump_distance = 0
-                        return True
                     elif (self.rect.x <= game_obj.rect.x) and (self.rect.y > (game_obj.rect.y - 47)):
                         self.update_position(-5, 0)
-                        return True
                     elif (self.rect.x >= game_obj.rect.x) and (self.rect.y > (game_obj.rect.y - 47)):
                         self.update_position(5, 0)
-                        return True
+
+                elif game_obj.get_type() == "goal":
+                    for x in range(-3, 3):
+                        for y in range(-3, 3):
+                            if (self.rect.x + x == game_obj.rect.x) and (self.rect.y + y == game_obj.rect.y):
+                                return "GOAL"
+                return True
             return False
 
         def update_position(self, offset_x, offset_y):
@@ -202,9 +206,9 @@ def game():
         level = open("./levels/" + the_level)
         for i, line in enumerate(level):
             if i == 0:
-                Player.starting_position = line
+                starting_position = line
             elif i == 31:
-                current_level = line
+                return line, starting_position
             else:
                 for j, word in enumerate(line.split()):
                     if word != 'empty':
@@ -217,11 +221,13 @@ def game():
     # Name from source: Sara and Star
     # Artist: Mandi Paugh
 
-    # load the level information
-    load_level(current_level)
-
     player = Player()
-    #player.update_position(0, height - 48)
+
+    # load the level information
+    current_level, player.coordinates = load_level(current_level)
+    player.rect.x = int(player.coordinates.strip().split(", ")[0])
+    player.rect.y = int(player.coordinates.strip().split(", ")[1])
+    player.coordinates = player.rect.x, player.rect.y
 
     #changed block class to GameObj class
     #block = GameObj()
@@ -271,10 +277,19 @@ def game():
         elif not keys[K_j]:
             player.fall()
 
+        updates = [pygame.Rect(player.rect.x - 10, player.rect.y - 6, 52, 60), pygame.Rect(100, 100, 500, 100)]
+
         for level_object in gameObjs:
             collided = player.check_collision(level_object)
-            if collided:
+            if collided == "GOAL":
+                current_level, player.coordinates = load_level(current_level)
+                player.rect.x = int(player.coordinates.strip().split(", ")[0])
+                player.rect.y = int(player.coordinates.strip().split(", ")[1])
+                player.coordinates = player.rect.x, player.rect.y
+                fullupdate = True
+            elif collided:
                 screen.blit(level_object.img, level_object.coordinates)
+                updates.append(level_object.rect)
 
         fps = pygame.time.Clock()
         fps.tick(80)
@@ -289,7 +304,6 @@ def game():
         if fullupdate == True:
             screen.fill(black)
             screen.blit(player.img, player.coordinates)
-            # screen.blit(block.img, block_coordinates)
 
             for thing in gameObjs:
                 screen.blit(thing.img, thing.coordinates)
@@ -298,4 +312,4 @@ def game():
             fullupdate = False
         else:
             screen.blit(player.img, player.coordinates)
-            pygame.display.update([pygame.Rect(player.rect.x - 10, player.rect.y - 6, 52, 60), pygame.Rect(100, 100, 500, 100)])
+            pygame.display.update(updates)
