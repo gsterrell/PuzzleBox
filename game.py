@@ -1,6 +1,7 @@
 import pygame
 import sys
 import time
+import re
 
 from pygame.locals import *
 
@@ -78,6 +79,7 @@ def game():
     pygame.init()
 
     characterpath = "./characters/Jill/"
+    objectpath = "./sprites/"
 
     size = width, height = 1280, 720
     black = 0, 0, 0
@@ -100,8 +102,6 @@ def game():
     pygame.mixer.music.play(-1)
 
     pygame.display.set_caption("Puzzle Box")
-
-    #block_coordinates = [200, height - 48]
 
     class Player(pygame.sprite.Sprite):
 
@@ -128,7 +128,7 @@ def game():
         def check_collision(self, game_obj):
             collided = pygame.sprite.collide_rect(self, game_obj)
             if collided:
-                if game_obj.get_type() in ['floor', 'switch', 'wall']:
+                if game_obj.get_type() in ['floor', 'wall']:
                     if (self.rect.y + 45 <= game_obj.rect.y) and self.falling:
                         # using this as there is no other instance where both should be true at the same time
                         self.update_position(0, -3)
@@ -145,6 +145,12 @@ def game():
                         for y in range(-3, 3):
                             if (self.rect.x + x == game_obj.rect.x) and (self.rect.y + y == game_obj.rect.y):
                                 return "GOAL"
+                elif game_obj.get_type() == 'switch':
+                    for maybe_goal in gameObjs:
+                        if maybe_goal.get_type() in ['closedgoal'] and game_obj.obj_num == maybe_goal.obj_num:
+                            maybe_goal.set_type("goal")
+                            return "SWITCH"
+
                 return True
             return False
 
@@ -182,13 +188,14 @@ def game():
                     return
 
     class GameObj(pygame.sprite.Sprite):
-        def __init__(self, image_path, posx, posy):
+        def __init__(self, image_path, the_type, posx, posy):
             pygame.sprite.Sprite.__init__(self)
             self.img = pygame.image.load(image_path)
             self.rect = self.img.get_rect()
             self.coordinates = posx, posy
             self.rect.x, self.rect.y = self.coordinates
-            self.type = ""
+            self.type = str(the_type)
+            self.obj_num = '0'
 
         def update_position(self, offset_x, offset_y):
             self.rect.x += offset_x
@@ -196,10 +203,11 @@ def game():
             self.coordinates = self.rect.x, self.rect.y
 
         def set_type(self, the_type):
-            self.type = the_type
+            self.img = pygame.image.load(objectpath + the_type + ".png")
+            self.type = str(the_type)
 
         def get_type(self):
-            return self.type
+            return str(self.type)
 
     def load_level(the_level):
         gameObjs.clear()
@@ -212,10 +220,15 @@ def game():
             else:
                 for j, word in enumerate(line.split()):
                     if word != 'empty':
-                        new_object = GameObj("./sprites/" + word + ".png", unit_size*(j), unit_size*(i-1))
-                        new_object.set_type(word)
-                        gameObjs.append(new_object)
+                        if not word.isalpha():
+                            words = word.split(':')
+                            new_object = GameObj("./sprites/" + str(words[0]) + ".png", str(word[0]), unit_size * j, unit_size * (i - 1))
+                            new_object.obj_num = str(words[1])
+                            new_object.type = str(words[0])
+                        else:
+                            new_object = GameObj("./sprites/" + word + ".png", word, unit_size*j, unit_size*(i-1))
 
+                        gameObjs.append(new_object)
 
     # Source: opengameart.org
     # Name from source: Sara and Star
@@ -228,10 +241,6 @@ def game():
     player.rect.x = int(player.coordinates.strip().split(", ")[0])
     player.rect.y = int(player.coordinates.strip().split(", ")[1])
     player.coordinates = player.rect.x, player.rect.y
-
-    #changed block class to GameObj class
-    #block = GameObj()
-    #block.update_position(200, height - 48)
 
     starttime = pygame.time.get_ticks()
     frames = 0
@@ -287,6 +296,8 @@ def game():
                 player.rect.y = int(player.coordinates.strip().split(", ")[1])
                 player.coordinates = player.rect.x, player.rect.y
                 fullupdate = True
+            elif collided == "SWITCH":
+                fullupdate = True
             elif collided:
                 screen.blit(level_object.img, level_object.coordinates)
                 updates.append(level_object.rect)
@@ -310,6 +321,7 @@ def game():
 
             pygame.display.flip()
             fullupdate = False
+
         else:
             screen.blit(player.img, player.coordinates)
             pygame.display.update(updates)
