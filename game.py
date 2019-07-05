@@ -15,6 +15,8 @@ green = 0,200,0
 bright_red = (255,0,0)
 bright_green = (0,255,0)
 backgroundIntro = 56,142,142
+icon = pygame.image.load("./sprites/icon.jpg")
+pygame.display.set_icon(icon)
 gameDisplay = pygame.display.set_mode((width,height))
 pygame.display.set_caption('Puzzle Game')
 clock = pygame.time.Clock()
@@ -49,7 +51,6 @@ def message_display(text):
     time.sleep(2)
     game()
 
-
 def game_intro():
     intro = True
     while intro:
@@ -67,13 +68,8 @@ def game_intro():
         pygame.display.update()
         clock.tick(15)
 
-
 def quitgame():
     quit()
-
-
-from pygame.locals import *
-
 
 def game():
     pygame.init()
@@ -136,9 +132,13 @@ def game():
                         self.falling = False
                         self.jump_distance = 0
                     elif (self.rect.x <= game_obj.rect.x) and (self.rect.y > (game_obj.rect.y - 47)):
-                        self.update_position(-5, 0)
+                        self.update_position(-4, 0)
                     elif (self.rect.x >= game_obj.rect.x) and (self.rect.y > (game_obj.rect.y - 47)):
-                        self.update_position(5, 0)
+                        self.update_position(4, 0)
+                    if (pygame.sprite.collide_rect(self, game_obj)) and (self.rect.y > game_obj.rect.y):
+                        self.update_position(0, 3)
+                        self.jumping = False
+                        self.falling = True
 
                 elif game_obj.get_type() == "goal":
                     for x in range(-3, 3):
@@ -268,18 +268,18 @@ def game():
         pygame.draw.rect(screen, black, player.rect)
         keys = pygame.key.get_pressed()
         if keys[K_a]:
-            player.update_position(-5, 0)
+            player.update_position(-4, 0)
             face_direction = 0
             player.img = pygame.image.load(characterpath + "Left.gif")
             if player.coordinates[0] <= 0:
-                player.update_position(5, 0)
+                player.update_position(4, 0)
 
         elif keys[K_d]:
-            player.update_position(5, 0)
+            player.update_position(4, 0)
             face_direction = 1
             player.img = pygame.image.load(characterpath + "Right.gif")
             if player.coordinates[0] >= width - 32:
-                player.update_position(-5, 0)
+                player.update_position(-4, 0)
 
         if keys[K_j]:
             player.jump()
