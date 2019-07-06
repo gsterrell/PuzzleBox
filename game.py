@@ -124,7 +124,7 @@ def game():
         def check_collision(self, game_obj):
             collided = pygame.sprite.collide_rect(self, game_obj)
             if collided:
-                if game_obj.get_type() in ['floor', 'wall']:
+                if game_obj.get_type() in ['floor', 'wall', 'ClosedBarrier']:
                     if (self.rect.y + 45 <= game_obj.rect.y) and self.falling:
                         # using this as there is no other instance where both should be true at the same time
                         self.update_position(0, -3)
@@ -147,8 +147,8 @@ def game():
                                 return "GOAL"
                 elif game_obj.get_type() == 'switch':
                     for maybe_goal in gameObjs:
-                        if maybe_goal.get_type() in ['closedgoal'] and game_obj.obj_num == maybe_goal.obj_num:
-                            maybe_goal.set_type("goal")
+                        if maybe_goal.get_type() in ['ClosedBarrier'] and game_obj.obj_num == maybe_goal.obj_num:
+                            maybe_goal.set_type("OpenBarrier")
                             return "SWITCH"
 
                 return True
