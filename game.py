@@ -120,6 +120,7 @@ def game():
             self.accelY = 0
             self.max_accel = 30
             self.max_speed = 5
+            self.carrying = [False]
 
         def check_collision(self, game_obj):
             collided = pygame.sprite.collide_rect(self, game_obj)
@@ -128,15 +129,23 @@ def game():
                     if (self.rect.y + 45 <= game_obj.rect.y) and self.falling:
                         # using this as there is no other instance where both should be true at the same time
                         self.update_position(0, -3)
+                        if self.carrying[0]:
+                            self.carrying[1].update_position(0,-3)
                         self.jumping = False
                         self.falling = False
                         self.jump_distance = 0
                     elif (self.rect.x <= game_obj.rect.x) and (self.rect.y > (game_obj.rect.y - 47)):
                         self.update_position(-4, 0)
+                        if self.carrying[0]:
+                            self.carrying[1].update_position(-4, 0)
                     elif (self.rect.x >= game_obj.rect.x) and (self.rect.y > (game_obj.rect.y - 47)):
                         self.update_position(4, 0)
+                        if self.carrying[0]:
+                            self.carrying[1].update_position(4 ,0)
                     if (pygame.sprite.collide_rect(self, game_obj)) and (self.rect.y > game_obj.rect.y):
                         self.update_position(0, 3)
+                        if self.carrying[0]:
+                            self.carrying[1].update_position(0,3)
                         self.jumping = False
                         self.falling = True
 
@@ -150,7 +159,29 @@ def game():
                         if maybe_goal.get_type() in ['ClosedBarrier'] and game_obj.obj_num == maybe_goal.obj_num:
                             maybe_goal.set_type("OpenBarrier")
                             return "SWITCH"
-
+                elif game_obj.get_type() == 'movebox':
+                    if (self.rect.y + 45 <= game_obj.rect.y) and self.falling:
+                        # using this as there is no other instance where both should be true at the same time
+                        self.update_position(0, -3)
+                        if self.carrying[0]:
+                            self.carrying[1].update_position(0, -3)
+                        self.jumping = False
+                        self.falling = False
+                        self.jump_distance = 0
+                    return "MOVEBOX"
+                return True
+            elif self.carrying[0] and (pygame.sprite.collide_rect(self.carrying[1], game_obj)):
+                if (self.carrying[1].rect.x <= game_obj.rect.x) and (self.carrying[1].rect.y > (game_obj.rect.y - 47)):
+                    self.update_position(-4, 0)
+                    self.carrying[1].update_position(-4, 0)
+                elif (self.carrying[1].rect.x >= game_obj.rect.x) and (self.carrying[1].rect.y > (game_obj.rect.y - 47)):
+                    self.update_position(4, 0)
+                    self.carrying[1].update_position(4, 0)
+                if (pygame.sprite.collide_rect(self.carrying[1], game_obj)) and (self.carrying[1].rect.y > game_obj.rect.y):
+                    self.update_position(0, 3)
+                    self.carrying[1].update_position(0, 3)
+                    self.jumping = False
+                    self.falling = True
                 return True
             return False
 
@@ -170,6 +201,8 @@ def game():
                 self.jumping = True
             if self.jumping and not self.falling:
                 self.update_position(0, -3)
+                if self.carrying[0]:
+                    self.carrying[1].update_position(0,-3)
                 self.jump_distance += 3
                 return True
 
@@ -184,6 +217,8 @@ def game():
                     self.falling = False
                 else:
                     self.update_position(0,3)
+                    if self.carrying[0]:
+                        self.carrying[1].update_position(0,3)
                     self.falling = True
                     return
 
@@ -245,6 +280,7 @@ def game():
     starttime = pygame.time.get_ticks()
     frames = 0
     while 1:
+        updates = [pygame.Rect(100, 100, 500, 100)]
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 sys.exit()
@@ -262,31 +298,61 @@ def game():
                         player.img = pygame.image.load(characterpath + "Left.gif")
                     elif face_direction == 1:
                         player.img = pygame.image.load(characterpath + "Right.gif")
+                
+                elif event.key == K_k:
+                    if player.carrying[0] and not player.jumping and not player.falling:
+                        player.carrying[0] = False
+                        pygame.draw.rect(screen, black, player.carrying[1].rect)
+                        updates.append(player.carrying[1].rect[:])
+                        player.carrying[1].update_position(0,48)
+                        gameObjs.append(player.carrying[1])
+                    else:
+                        for level_object in gameObjs:
+                            collided = player.check_collision(level_object)
+                            if (collided == "MOVEBOX") and (player.carrying[0] == False):
+                                player.carrying = [True, level_object]
+                                pygame.draw.rect(screen, black, level_object.rect)
+                                updates.append(level_object.rect[:])
+                                gameObjs.remove(level_object)
+                                player.carrying[1].rect.x = player.rect.x + 3
+                                player.carrying[1].rect.y = player.rect.y - 24
+                                player.carrying[1].coordinates = player.carrying[1].rect.x, player.carrying[1].rect.y
+
                 elif event.key == K_r:
                     fullupdate = True
 
         pygame.draw.rect(screen, black, player.rect)
+        updates.append(player.rect[:])
+        if player.carrying[0]:
+            pygame.draw.rect(screen, black, player.carrying[1].rect)
+            updates.append(player.carrying[1].rect[:])
         keys = pygame.key.get_pressed()
         if keys[K_a]:
             player.update_position(-4, 0)
+            if player.carrying[0]:
+                player.carrying[1].update_position(-4,0)
             face_direction = 0
             player.img = pygame.image.load(characterpath + "Left.gif")
             if player.coordinates[0] <= 0:
                 player.update_position(4, 0)
+                if player.carrying[0]:
+                    player.carrying[1].update_position(4, 0)
 
         elif keys[K_d]:
             player.update_position(4, 0)
+            if player.carrying[0]:
+                player.carrying[1].update_position(4, 0)
             face_direction = 1
             player.img = pygame.image.load(characterpath + "Right.gif")
             if player.coordinates[0] >= width - 32:
                 player.update_position(-4, 0)
+                if player.carrying[0]:
+                    player.carrying[1].update_position(-4, 0)
 
         if keys[K_j]:
             player.jump()
         elif not keys[K_j]:
             player.fall()
-
-        updates = [pygame.Rect(player.rect.x - 10, player.rect.y - 6, 52, 60), pygame.Rect(100, 100, 500, 100)]
 
         for level_object in gameObjs:
             collided = player.check_collision(level_object)
@@ -295,6 +361,7 @@ def game():
                 player.rect.x = int(player.coordinates.strip().split(", ")[0])
                 player.rect.y = int(player.coordinates.strip().split(", ")[1])
                 player.coordinates = player.rect.x, player.rect.y
+                player.carrying[0] = False
                 fullupdate = True
             elif collided == "SWITCH":
                 fullupdate = True
@@ -324,4 +391,8 @@ def game():
 
         else:
             screen.blit(player.img, player.coordinates)
+            updates.append(player.rect)
+            if player.carrying[0]:
+                screen.blit(player.carrying[1].img, player.carrying[1].coordinates)
+                updates.append(player.carrying[1].rect)
             pygame.display.update(updates)
