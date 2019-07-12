@@ -105,6 +105,7 @@ def game():
             pygame.sprite.Sprite.__init__(self)
             starting_position = 500, 500
             self.img = pygame.image.load(characterpath + "Right.gif")
+            self.overwrite = pygame.image.load(characterpath + "Right_Overwrite.gif")
             # Source: opengameart.org
             # Name from source: Sara and Star
             # Artist: Mandi Paugh
@@ -125,6 +126,7 @@ def game():
         def check_collision(self, game_obj):
             collided = pygame.sprite.collide_rect(self, game_obj)
             if collided:
+                game_obj.collided = True
                 if game_obj.get_type() in ['floor', 'wall', 'ClosedBarrier']:
                     if (self.rect.y + 45 <= game_obj.rect.y) and self.falling:
                         # using this as there is no other instance where both should be true at the same time
@@ -171,17 +173,22 @@ def game():
                     return "MOVEBOX"
                 return True
             elif self.carrying[0] and (pygame.sprite.collide_rect(self.carrying[1], game_obj)):
-                if (self.carrying[1].rect.x <= game_obj.rect.x) and (self.carrying[1].rect.y > (game_obj.rect.y - 47)):
-                    self.update_position(-4, 0)
-                    self.carrying[1].update_position(-4, 0)
-                elif (self.carrying[1].rect.x >= game_obj.rect.x) and (self.carrying[1].rect.y > (game_obj.rect.y - 47)):
-                    self.update_position(4, 0)
-                    self.carrying[1].update_position(4, 0)
-                if (pygame.sprite.collide_rect(self.carrying[1], game_obj)) and (self.carrying[1].rect.y > game_obj.rect.y):
-                    self.update_position(0, 3)
-                    self.carrying[1].update_position(0, 3)
-                    self.jumping = False
-                    self.falling = True
+                game_obj.collided = True
+                if game_obj.get_type() in ['floor', 'wall', 'ClosedBarrier']:
+                    if (self.carrying[1].rect.x <= game_obj.rect.x) and (self.carrying[1].rect.y > (game_obj.rect.y - 47)):
+                        self.update_position(-4, 0)
+                        self.carrying[1].update_position(-4, 0)
+                    elif (self.carrying[1].rect.x >= game_obj.rect.x) and (self.carrying[1].rect.y > (game_obj.rect.y - 47)):
+                        self.update_position(4, 0)
+                        self.carrying[1].update_position(4, 0)
+                    if (pygame.sprite.collide_rect(self.carrying[1], game_obj)) and (self.carrying[1].rect.y > game_obj.rect.y):
+                        self.update_position(0, 3)
+                        self.carrying[1].update_position(0, 3)
+                        self.jumping = False
+                        self.falling = True
+                return True
+            elif game_obj.collided:
+                game_obj.collided = False
                 return True
             return False
 
@@ -231,6 +238,7 @@ def game():
             self.rect.x, self.rect.y = self.coordinates
             self.type = str(the_type)
             self.obj_num = '0'
+            self.collided = False
 
         def update_position(self, offset_x, offset_y):
             self.rect.x += offset_x
@@ -321,7 +329,7 @@ def game():
                 elif event.key == K_r:
                     fullupdate = True
 
-        pygame.draw.rect(screen, black, player.rect)
+        screen.blit(player.overwrite, player.coordinates)
         updates.append(player.rect[:])
         if player.carrying[0]:
             pygame.draw.rect(screen, black, player.carrying[1].rect)
@@ -333,6 +341,7 @@ def game():
                 player.carrying[1].update_position(-4,0)
             face_direction = 0
             player.img = pygame.image.load(characterpath + "Left.gif")
+            player.overwrite = pygame.image.load(characterpath + "Left_Overwrite.gif")
             if player.coordinates[0] <= 0:
                 player.update_position(4, 0)
                 if player.carrying[0]:
@@ -344,6 +353,7 @@ def game():
                 player.carrying[1].update_position(4, 0)
             face_direction = 1
             player.img = pygame.image.load(characterpath + "Right.gif")
+            player.overwrite = pygame.image.load(characterpath + "Right_Overwrite.gif")
             if player.coordinates[0] >= width - 32:
                 player.update_position(-4, 0)
                 if player.carrying[0]:
@@ -372,12 +382,13 @@ def game():
         fps = pygame.time.Clock()
         fps.tick(80)
 
+        #FPS PRINT START
         font = pygame.font.Font('freesansbold.ttf', 32)
-
         currtime = pygame.time.get_ticks()
         frames += 1
         text = font.render(str(frames / ((currtime-starttime) / 1000)), True, green, blue)
         screen.blit(text, (100, 100))
+        #FPS PRINT STOP
 
         if fullupdate == True:
             screen.fill(black)
