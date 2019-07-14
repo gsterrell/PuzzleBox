@@ -9,15 +9,27 @@ Player Mechanics: Player will have left/right movement, the ability to jump, and
 
 Proposed Control Scheme: A/D:Left/Right J:Jump K:Interact
 
-List of currently planned interactive objects:
+List of current interactive objects:
+
 1: Door to end level
+
+2: Player Barrier (Blocks player movement, can be turned on/off via pressure plates, levers and buttons)
+
+3: Colored boxes (Red, Green, Blue) (Activates Pressure Plates, Players can stand on them and carry/throw them) 
+
+List of currently planned objects:
+
 2: Teleporters for player movement
+
 3: Pressure plates (will turn on/off depending on if something is on it)
+
 4: Levers (Player interaction switches it on/off)
+
 5: Wall-Button (Player interaction sets state pressed, cannot undo like levers and pressure plates)
+
 6: Moving Platforms
-7: Player Barrier (Blocks player movement, can be turned on/off via pressure plates, levers and buttons)
-8: Colored boxes (Red, Green, Blue) (Activates Pressure Plates, Players can stand on them and carry/throw them)
+
+
 9: Colored Barriers (Red, Green, Blue) (Does not block player movement, but prevents boxes other than the specified color from passing through.
 
 Setting: Futuristic, Sci-Fi

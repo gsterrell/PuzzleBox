@@ -12,14 +12,19 @@ black = 0, 0, 0
 white = 255, 255, 255
 red = 200,0,0
 green = 0,200,0
+blue = 0, 0, 100
 bright_red = (255,0,0)
 bright_green = (0,255,0)
+bright_blue = (0, 0, 255)
 backgroundIntro = 56,142,142
 icon = pygame.image.load("./sprites/icon.jpg")
 pygame.display.set_icon(icon)
-gameDisplay = pygame.display.set_mode((width,height))
+gameDisplay = pygame.display.set_mode((width, height))#, FULLSCREEN|HWSURFACE|DOUBLEBUF)
 pygame.display.set_caption('Puzzle Game')
 clock = pygame.time.Clock()
+continued = False
+current_level = "level1.lvl"
+next_level = "level2.lvl"
 
 def button(msg,x,y,w,h,ic,ac,action=None):
     mouse = pygame.mouse.get_pos()
@@ -38,9 +43,11 @@ def button(msg,x,y,w,h,ic,ac,action=None):
     textRect.center = ( (x+(w/2)), (y+(h/2)) )
     gameDisplay.blit(textSurf, textRect)
 
+
 def text_objects(text, font):
     textSurface = font.render(text, True, black)
     return textSurface, textSurface.get_rect()
+
 
 def message_display(text):
     largeText = pygame.font.Font('freesansbold.ttf', 115)
@@ -50,6 +57,7 @@ def message_display(text):
     pygame.display.update()
     time.sleep(2)
     game()
+
 
 def game_intro():
     intro = True
@@ -64,12 +72,50 @@ def game_intro():
         TextRect.center = ((width/2),(height/2))
         gameDisplay.blit(TextSurf, TextRect)
         button("Start", 600, 450, 100, 50, green, bright_green, game)
-        button("Quit", 600, 550, 100, 50, red, bright_red, quitgame)
+        button("Continue", 600, 550, 100, 50, blue, bright_blue, continue_game)
+        button("Quit", 600, 650, 100, 50, red, bright_red, quitgame)
         pygame.display.update()
-        clock.tick(15)
+        clock.tick(80)
+
 
 def quitgame():
     quit()
+
+
+def load_settings():
+    global current_level, next_level
+    try:
+        file = open("settings.ini")
+        current_level = file.readline()
+        file.close()
+        level = open("./levels/" + current_level)
+        for i, line in enumerate(level):
+            if i == 31:
+                next_level = line
+        level.close()
+    except IOError:
+        current_level = "level1.lvl"
+        next_level = "level2.lvl"
+
+
+def save_settings(saved_level):
+    global current_level
+    file = open("settings.ini", 'w')
+    file.write(saved_level)
+    file.close()
+
+
+def continue_game():
+    global continued
+    try:
+        if open("settings.ini") is False:
+            continued = False
+        else:
+            continued = True
+    except IOError:
+        continued = False
+    game()
+
 
 def game():
     pygame.init()
@@ -80,7 +126,15 @@ def game():
     size = width, height = 1280, 720
     black = 0, 0, 0
     gameObjs = []
-    current_level = "level1.lvl"
+
+    global current_level, next_level, continued
+
+    if continued is False:
+        current_level = "level1.lvl"
+        next_level = "level1.lv2"
+    else:
+        load_settings()
+
     unit_size = 24
     fullupdate = True
     green = (0, 255, 0)
@@ -90,7 +144,7 @@ def game():
     face_direction = 1
     # 0: Left  1: Right
 
-    screen = pygame.display.set_mode(size)
+    screen = pygame.display.set_mode((width, height))#, FULLSCREEN|HWSURFACE|DOUBLEBUF)
 
     pygame.mixer.music.load("BGM.wav")
     # Patakas World
@@ -272,6 +326,7 @@ def game():
                             new_object = GameObj("./sprites/" + word + ".png", word, unit_size*j, unit_size*(i-1))
 
                         gameObjs.append(new_object)
+        level.close()
 
     # Source: opengameart.org
     # Name from source: Sara and Star
@@ -280,7 +335,8 @@ def game():
     player = Player()
 
     # load the level information
-    current_level, player.coordinates = load_level(current_level)
+    next_level, player.coordinates = load_level(current_level)
+
     player.rect.x = int(player.coordinates.strip().split(", ")[0])
     player.rect.y = int(player.coordinates.strip().split(", ")[1])
     player.coordinates = player.rect.x, player.rect.y
@@ -329,6 +385,9 @@ def game():
                 elif event.key == K_r:
                     fullupdate = True
 
+                elif event.key == K_s:
+                    save_settings(current_level)
+
         screen.blit(player.overwrite, player.coordinates)
         updates.append(player.rect[:])
         if player.carrying[0]:
@@ -367,7 +426,8 @@ def game():
         for level_object in gameObjs:
             collided = player.check_collision(level_object)
             if collided == "GOAL":
-                current_level, player.coordinates = load_level(current_level)
+                current_level = next_level
+                next_level, player.coordinates = load_level(next_level)
                 player.rect.x = int(player.coordinates.strip().split(", ")[0])
                 player.rect.y = int(player.coordinates.strip().split(", ")[1])
                 player.coordinates = player.rect.x, player.rect.y
