@@ -6,7 +6,7 @@ import re
 from pygame.locals import *
 
 pygame.init()
-width = 1280
+width = 1272
 height = 720
 black = 0, 0, 0
 white = 255, 255, 255
@@ -19,7 +19,7 @@ bright_blue = (0, 0, 255)
 backgroundIntro = 56,142,142
 icon = pygame.image.load("./sprites/icon.jpg")
 pygame.display.set_icon(icon)
-gameDisplay = pygame.display.set_mode((width, height))#, FULLSCREEN|HWSURFACE|DOUBLEBUF)
+gameDisplay = pygame.display.set_mode((width, height))
 pygame.display.set_caption('Puzzle Game')
 clock = pygame.time.Clock()
 continued = False
@@ -90,7 +90,7 @@ def load_settings():
         file.close()
         level = open("./levels/" + current_level)
         for i, line in enumerate(level):
-            if i == 31:
+            if i == 30:
                 next_level = line
         level.close()
     except IOError:
@@ -123,7 +123,7 @@ def game():
     characterpath = "./characters/Jill/"
     objectpath = "./sprites/"
 
-    size = width, height = 1280, 720
+    size = width, height = 1272, 720
     black = 0, 0, 0
     gameObjs = []
 
@@ -144,7 +144,7 @@ def game():
     face_direction = 1
     # 0: Left  1: Right
 
-    screen = pygame.display.set_mode((width, height))#, FULLSCREEN|HWSURFACE|DOUBLEBUF)
+    screen = pygame.display.set_mode(size)
 
     pygame.mixer.music.load("BGM.wav")
     # Patakas World
@@ -180,7 +180,6 @@ def game():
         def check_collision(self, game_obj):
             collided = pygame.sprite.collide_rect(self, game_obj)
             if collided:
-                game_obj.collided = True
                 if game_obj.get_type() in ['floor', 'wall', 'ClosedBarrier']:
                     if (self.rect.y + 45 <= game_obj.rect.y) and self.falling:
                         # using this as there is no other instance where both should be true at the same time
@@ -209,11 +208,13 @@ def game():
                     for x in range(-3, 3):
                         for y in range(-3, 3):
                             if (self.rect.x + x == game_obj.rect.x) and (self.rect.y + y == game_obj.rect.y):
+                                game_obj.collided = True
                                 return "GOAL"
                 elif game_obj.get_type() == 'switch':
                     for maybe_goal in gameObjs:
                         if maybe_goal.get_type() in ['ClosedBarrier'] and game_obj.obj_num == maybe_goal.obj_num:
                             maybe_goal.set_type("OpenBarrier")
+                            game_obj.collided = True
                             return "SWITCH"
                 elif game_obj.get_type() == 'movebox':
                     if (self.rect.y + 45 <= game_obj.rect.y) and self.falling:
@@ -224,7 +225,12 @@ def game():
                         self.jumping = False
                         self.falling = False
                         self.jump_distance = 0
+                    game_obj.collided = True
                     return "MOVEBOX"
+                elif game_obj.get_type() == 'helpbox' and game_obj.collided == False:
+                    game_obj.collided = True
+                    return ["helpbox", int(game_obj.obj_num)]
+                game_obj.collided = True
                 return True
             elif self.carrying[0] and (pygame.sprite.collide_rect(self.carrying[1], game_obj)):
                 game_obj.collided = True
@@ -243,6 +249,9 @@ def game():
                 return True
             elif game_obj.collided:
                 game_obj.collided = False
+                if game_obj.get_type() == 'helpbox':
+                    pygame.draw.rect(screen, black, pygame.Rect(280, 685, 700, 30))
+                    updates.append(pygame.Rect(280, 685, 700, 30))
                 return True
             return False
 
@@ -309,24 +318,30 @@ def game():
     def load_level(the_level):
         gameObjs.clear()
         level = open("./levels/" + the_level)
+        helptext = []
         for i, line in enumerate(level):
             if i == 0:
                 starting_position = line
-            elif i == 31:
-                return line, starting_position
+            elif i == 1:
+                Levelname = line.strip()
+            elif i == 30:
+                nextlevel = line.strip()
+            elif i > 30:
+                helptext.append(line.strip()[:])
             else:
                 for j, word in enumerate(line.split()):
                     if word != 'empty':
                         if not word.isalpha():
                             words = word.split(':')
-                            new_object = GameObj("./sprites/" + str(words[0]) + ".png", str(word[0]), unit_size * j, unit_size * (i - 1))
+                            new_object = GameObj("./sprites/" + str(words[0]) + ".png", str(word[0]), unit_size * j, unit_size * (i - 2))
                             new_object.obj_num = str(words[1])
                             new_object.type = str(words[0])
                         else:
-                            new_object = GameObj("./sprites/" + word + ".png", word, unit_size*j, unit_size*(i-1))
+                            new_object = GameObj("./sprites/" + word + ".png", word, unit_size*j, unit_size*(i-2))
 
                         gameObjs.append(new_object)
         level.close()
+        return nextlevel, starting_position, helptext, Levelname
 
     # Source: opengameart.org
     # Name from source: Sara and Star
@@ -335,7 +350,7 @@ def game():
     player = Player()
 
     # load the level information
-    next_level, player.coordinates = load_level(current_level)
+    next_level, player.coordinates, helptext, levelname = load_level(current_level)
 
     player.rect.x = int(player.coordinates.strip().split(", ")[0])
     player.rect.y = int(player.coordinates.strip().split(", ")[1])
@@ -375,8 +390,7 @@ def game():
                             collided = player.check_collision(level_object)
                             if (collided == "MOVEBOX") and (player.carrying[0] == False):
                                 player.carrying = [True, level_object]
-                                pygame.draw.rect(screen, black, level_object.rect)
-                                updates.append(level_object.rect[:])
+                                fullupdate = True
                                 gameObjs.remove(level_object)
                                 player.carrying[1].rect.x = player.rect.x + 3
                                 player.carrying[1].rect.y = player.rect.y - 24
@@ -427,14 +441,24 @@ def game():
             collided = player.check_collision(level_object)
             if collided == "GOAL":
                 current_level = next_level
-                next_level, player.coordinates = load_level(next_level)
+                next_level, player.coordinates, helptext, levelname = load_level(next_level)
                 player.rect.x = int(player.coordinates.strip().split(", ")[0])
                 player.rect.y = int(player.coordinates.strip().split(", ")[1])
                 player.coordinates = player.rect.x, player.rect.y
+                starttime = pygame.time.get_ticks()
+                frames = 0
                 player.carrying[0] = False
                 fullupdate = True
             elif collided == "SWITCH":
                 fullupdate = True
+            elif isinstance(collided, list):
+                if collided[0] == 'helpbox':
+                    font = pygame.font.Font('freesansbold.ttf', 24)
+                    text = font.render(helptext[collided[1] - 1], True, bright_red, black)
+                    screen.blit(text, (280, 685))
+                    updates.append(pygame.Rect(280, 685, 700, 30))
+                    screen.blit(level_object.img, level_object.coordinates)
+                    updates.append(level_object.rect)
             elif collided:
                 screen.blit(level_object.img, level_object.coordinates)
                 updates.append(level_object.rect)
@@ -450,13 +474,54 @@ def game():
         screen.blit(text, (100, 100))
         #FPS PRINT STOP
 
+        seconds = (currtime - starttime) // 1000
+        if seconds < 60:
+            text = font.render("Time: " + str(seconds) + "s", True, green, black)
+        else:
+            minutes = seconds // 60
+            seconds = seconds - (minutes * 60)
+            text = font.render("Time: " + str(minutes) + "m " + str(seconds) + "s", True, green, black)
+        pygame.draw.rect(screen, black, pygame.Rect(10,680,250,30))
+        screen.blit(text, (10, 680))
+        updates.append(pygame.Rect(10, 680, 250, 30))
+
         if fullupdate == True:
             screen.fill(black)
             screen.blit(player.img, player.coordinates)
 
             for thing in gameObjs:
                 screen.blit(thing.img, thing.coordinates)
+                if thing.type == "helpbox":
+                    thing.collided = False
+                    collided = player.check_collision(thing)
+                    if collided:
+                        font = pygame.font.Font('freesansbold.ttf', 24)
+                        text = font.render(helptext[collided[1] - 1], True, bright_red, black)
+                        screen.blit(text, (280, 685))
+                        updates.append(pygame.Rect(280, 685, 700, 30))
+                        screen.blit(level_object.img, level_object.coordinates)
 
+            font = pygame.font.Font('freesansbold.ttf', 32)
+            currtime = pygame.time.get_ticks()
+            frames += 1
+            text = font.render(str(frames / ((currtime - starttime) / 1000)), True, green, blue)
+            screen.blit(text, (100, 100))
+
+            if seconds < 60:
+                text = font.render("Time: " + str(seconds) + "s", True, green, black)
+            else:
+                minutes = seconds // 60
+                seconds = seconds - (minutes * 60)
+                text = font.render("Time: " + str(minutes) + "m " + str(seconds) + "s", True, green, black)
+            screen.blit(text, (10, 680))
+
+            text = font.render("Level: " + levelname, True, green, black)
+            screen.blit(text, (1000, 680))
+
+            if player.carrying[0]:
+                screen.blit(player.carrying[1].img, player.carrying[1].coordinates)
+
+            screen.blit(player.img, player.coordinates)
             pygame.display.flip()
             fullupdate = False
 
