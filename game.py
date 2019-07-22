@@ -126,6 +126,10 @@ def game():
     size = width, height = 1272, 720
     black = 0, 0, 0
     gameObjs = []
+    barrier_objects = []
+    movebox_objects = []
+    switch_objects = []
+    plate_objects = []
 
     global current_level, next_level, continued
 
@@ -150,6 +154,8 @@ def game():
     # Patakas World
     # www.dl-sounds.com
     pygame.mixer.music.play(-1)
+
+    barrier_sound = pygame.mixer.Sound('doorsound.wav')
 
     pygame.display.set_caption("Puzzle Box")
 
@@ -210,12 +216,23 @@ def game():
                             if (self.rect.x + x == game_obj.rect.x) and (self.rect.y + y == game_obj.rect.y):
                                 game_obj.collided = True
                                 return "GOAL"
-                elif game_obj.get_type() == 'switch':
-                    for maybe_goal in gameObjs:
+                elif game_obj.get_type() == 'redswitch':
+                    for maybe_goal in barrier_objects:
                         if maybe_goal.get_type() in ['ClosedBarrier'] and game_obj.obj_num == maybe_goal.obj_num:
                             maybe_goal.set_type("OpenBarrier")
                             game_obj.collided = True
+                            game_obj.set_type('greenswitch')
+                            barrier_sound.play()
                             return "SWITCH"
+                elif game_obj.get_type() == 'plateup':
+                    for maybe_goal in barrier_objects:
+                        if maybe_goal.get_type() in ['ClosedBarrier'] and game_obj.obj_num == maybe_goal.obj_num:
+                            maybe_goal.set_type("OpenBarrier")
+                            game_obj.collided = True
+                            game_obj.set_type('platedown')
+                            game_obj.update_position(0, 4)
+                            barrier_sound.play()
+                            return "PLATEDOWN"
                 elif game_obj.get_type() == 'movebox':
                     if (self.rect.y + 45 <= game_obj.rect.y) and self.falling:
                         # using this as there is no other instance where both should be true at the same time
@@ -315,6 +332,19 @@ def game():
         def get_type(self):
             return str(self.type)
 
+        def check_collision(self, game_obj):
+            collided = pygame.sprite.collide_rect(self, game_obj)
+            if collided:
+                if game_obj.get_type() == 'movebox':
+                    for maybe_goal in barrier_objects:
+                        if maybe_goal.get_type() in ['ClosedBarrier'] and game_obj.obj_num == maybe_goal.obj_num:
+                            maybe_goal.set_type("OpenBarrier")
+                            game_obj.collided = True
+                            game_obj.set_type('platedown')
+                            game_obj.update_position(0, 4)
+                            barrier_sound.play()
+                            return "PLATEDOWN"
+
     def load_level(the_level):
         gameObjs.clear()
         level = open("./levels/" + the_level)
@@ -333,13 +363,26 @@ def game():
                     if word != 'empty':
                         if not word.isalpha():
                             words = word.split(':')
-                            new_object = GameObj("./sprites/" + str(words[0]) + ".png", str(word[0]), unit_size * j, unit_size * (i - 2))
+                            if words[0] == 'plateup':
+                                new_object = GameObj("./sprites/" + str(words[0]) + ".png", str(word[0]), unit_size * j,
+                                                     unit_size * (i - 2)-4)
+                            else:
+                                new_object = GameObj("./sprites/" + str(words[0]) + ".png", str(word[0]), unit_size * j, unit_size * (i - 2))
                             new_object.obj_num = str(words[1])
                             new_object.type = str(words[0])
                         else:
                             new_object = GameObj("./sprites/" + word + ".png", word, unit_size*j, unit_size*(i-2))
 
                         gameObjs.append(new_object)
+
+                        if new_object.type == 'plateup':
+                            plate_objects.append(new_object)
+                        if new_object.type == 'ClosedBarrier':
+                            barrier_objects.append(new_object)
+                        if new_object.type == 'movebox':
+                            movebox_objects.append(new_object)
+                        if new_object.type == 'greenswitch':
+                            switch_objects.append(new_object)
         level.close()
         return nextlevel, starting_position, helptext, Levelname
 
@@ -449,7 +492,7 @@ def game():
                 frames = 0
                 player.carrying[0] = False
                 fullupdate = True
-            elif collided == "SWITCH":
+            elif collided == "SWITCH" or collided == "PLATEDOWN":
                 fullupdate = True
             elif isinstance(collided, list):
                 if collided[0] == 'helpbox':
