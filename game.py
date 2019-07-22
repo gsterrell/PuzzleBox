@@ -186,7 +186,17 @@ def game():
     # www.dl-sounds.com
     pygame.mixer.music.play(-1)
 
+    # Credit to Michael Baradari
+    # Release under CC-BY 3.0
     barrier_sound = pygame.mixer.Sound('doorsound.wav')
+
+    # Credit to Jesús Lastra
+    # Public Domain CC0
+    jump_sound = pygame.mixer.Sound('jump.wav')
+
+    # Credit to  Dan Knoflicek
+    # Release under CC-BY 3.0
+    box_sound = pygame.mixer.Sound('box_drop.wav')
 
     pygame.display.set_caption("Puzzle Box")
 
@@ -316,6 +326,7 @@ def game():
                 self.falling = True
                 self.fall()
             elif not self.jumping:
+                jump_sound.play()
                 self.jumping = True
             if self.jumping and not self.falling:
                 self.update_position(0, -3)
@@ -364,8 +375,8 @@ def game():
             return str(self.type)
 
         def check_collision(self, game_obj):
-            collided = pygame.sprite.collide_rect(self, game_obj)
-            if collided:
+            check_obj_collided = pygame.sprite.collide_rect(self, game_obj)
+            if check_obj_collided:
                 if game_obj.get_type() == 'movebox':
                     for maybe_goal in barrier_objects:
                         if maybe_goal.get_type() in ['ClosedBarrier'] and game_obj.obj_num == maybe_goal.obj_num:
@@ -456,6 +467,7 @@ def game():
                 
                 elif event.key == K_k:
                     if player.carrying[0] and not player.jumping and not player.falling:
+                        box_sound.play()
                         player.carrying[0] = False
                         pygame.draw.rect(screen, black, player.carrying[1].rect)
                         updates.append(player.carrying[1].rect[:])
@@ -542,8 +554,6 @@ def game():
             elif collided:
                 screen.blit(level_object.img, level_object.coordinates)
                 updates.append(level_object.rect)
-
-                '''Was some failed code here'''
 
         fps = pygame.time.Clock()
         fps.tick(80)
