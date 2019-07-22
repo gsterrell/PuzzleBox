@@ -16,6 +16,7 @@ blue = 0, 0, 100
 bright_red = (255,0,0)
 bright_green = (0,255,0)
 bright_blue = (0, 0, 255)
+grey = 102,102,102
 backgroundIntro = 56,142,142
 icon = pygame.image.load("./sprites/icon.jpg")
 pygame.display.set_icon(icon)
@@ -25,6 +26,35 @@ clock = pygame.time.Clock()
 continued = False
 current_level = "level1.lvl"
 next_level = "level2.lvl"
+
+def pause():
+    paused = True
+    pygame.draw.rect(gameDisplay, grey, (440, 200, 400, 80))
+    largeText = pygame.font.Font('freesansbold.ttf', 50)
+    TextSurf, TextRect = text_objects("Game Paused!", largeText, white)
+    TextRect.center = ((width / 2), (height / 3))
+    gameDisplay.blit(TextSurf, TextRect)
+
+    pygame.draw.rect(gameDisplay, grey, (340, 320, 590, 70))
+    mediumText = pygame.font.Font('freesansbold.ttf', 30)
+    TextSurf, TextRect = text_objects("Press 'C' to Continue or 'Q' to Quit", mediumText, white)
+    TextRect.center = ((width / 2), (height / 2))
+    gameDisplay.blit(TextSurf, TextRect)
+    pygame.display.update()
+
+    while paused:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == K_c:
+                    paused = False
+                #ullupdate = True
+                elif event.key == K_q:
+                    pygame.quit()
+                    quit()
+
 
 def button(msg,x,y,w,h,ic,ac,action=None):
     mouse = pygame.mouse.get_pos()
@@ -39,13 +69,13 @@ def button(msg,x,y,w,h,ic,ac,action=None):
         pygame.draw.rect(gameDisplay, ic,(x,y,w,h))
 
     smallText = pygame.font.SysFont("comicsansms",20)
-    textSurf, textRect = text_objects(msg, smallText)
+    textSurf, textRect = text_objects(msg, smallText, black)
     textRect.center = ( (x+(w/2)), (y+(h/2)) )
     gameDisplay.blit(textSurf, textRect)
 
 
-def text_objects(text, font):
-    textSurface = font.render(text, True, black)
+def text_objects(text, font, color):
+    textSurface = font.render(text, True, color)
     return textSurface, textSurface.get_rect()
 
 
@@ -68,7 +98,7 @@ def game_intro():
                 quit()
         gameDisplay.fill(backgroundIntro)
         largeText = pygame.font.Font('freesansbold.ttf',115)
-        TextSurf, TextRect = text_objects("Puzzle Game", largeText)
+        TextSurf, TextRect = text_objects("Puzzle Game", largeText, black)
         TextRect.center = ((width/2),(height/2))
         gameDisplay.blit(TextSurf, TextRect)
         button("Start", 600, 450, 100, 50, green, bright_green, game)
@@ -447,6 +477,10 @@ def game():
 
                 elif event.key == K_s:
                     save_settings(current_level)
+
+                elif event.key == K_p:
+                    pause()
+                    fullupdate = True
 
         screen.blit(player.overwrite, player.coordinates)
         updates.append(player.rect[:])
