@@ -130,6 +130,7 @@ def game():
     movebox_objects = []
     switch_objects = []
     plate_objects = []
+    wall_objects = []
 
     global current_level, next_level, continued
 
@@ -383,6 +384,8 @@ def game():
                             movebox_objects.append(new_object)
                         if new_object.type == 'greenswitch':
                             switch_objects.append(new_object)
+                        if new_object.type == 'wall':
+                            wall_objects.append(new_object)
         level.close()
         return nextlevel, starting_position, helptext, Levelname
 
@@ -505,6 +508,8 @@ def game():
             elif collided:
                 screen.blit(level_object.img, level_object.coordinates)
                 updates.append(level_object.rect)
+
+                '''Was some failed code here'''
 
         fps = pygame.time.Clock()
         fps.tick(80)
