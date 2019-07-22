@@ -1,7 +1,6 @@
 import pygame
 import sys
 import time
-import re
 
 from pygame.locals import *
 
