@@ -180,22 +180,22 @@ def game():
 
     screen = pygame.display.set_mode(size)
 
-    pygame.mixer.music.load("BGM.wav")
+    pygame.mixer.music.load("./sounds/BGM.wav")
     # Patakas World
     # www.dl-sounds.com
     pygame.mixer.music.play(-1)
 
     # Credit to Michael Baradari
     # Release under CC-BY 3.0
-    barrier_sound = pygame.mixer.Sound('doorsound.wav')
+    barrier_sound = pygame.mixer.Sound('./sounds/doorsound.wav')
 
     # Credit to Jesús Lastra
     # Public Domain CC0
-    jump_sound = pygame.mixer.Sound('jump.wav')
+    jump_sound = pygame.mixer.Sound('./sounds/jump.wav')
 
     # Credit to  Dan Knoflicek
     # Release under CC-BY 3.0
-    box_sound = pygame.mixer.Sound('box_drop.wav')
+    box_sound = pygame.mixer.Sound('./sounds/box_drop.wav')
 
     pygame.display.set_caption("Puzzle Box")
 
