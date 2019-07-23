@@ -264,15 +264,6 @@ def game():
                             game_obj.set_type('greenswitch')
                             barrier_sound.play()
                             return "SWITCH"
-                elif game_obj.get_type() == 'plateup':
-                    for maybe_goal in barrier_objects:
-                        if maybe_goal.get_type() in ['ClosedBarrier'] and game_obj.obj_num == maybe_goal.obj_num:
-                            maybe_goal.set_type("OpenBarrier")
-                            game_obj.collided = True
-                            game_obj.set_type('platedown')
-                            game_obj.update_position(0, 4)
-                            barrier_sound.play()
-                            return "PLATEDOWN"
                 elif game_obj.get_type() == 'movebox':
                     if (self.rect.y + 45 <= game_obj.rect.y) and self.falling:
                         # using this as there is no other instance where both should be true at the same time
@@ -374,17 +365,7 @@ def game():
             return str(self.type)
 
         def check_collision(self, game_obj):
-            check_obj_collided = pygame.sprite.collide_rect(self, game_obj)
-            if check_obj_collided:
-                if game_obj.get_type() == 'movebox':
-                    for maybe_goal in barrier_objects:
-                        if maybe_goal.get_type() in ['ClosedBarrier'] and game_obj.obj_num == maybe_goal.obj_num:
-                            maybe_goal.set_type("OpenBarrier")
-                            game_obj.collided = True
-                            game_obj.set_type('platedown')
-                            game_obj.update_position(0, 4)
-                            barrier_sound.play()
-                            return "PLATEDOWN"
+            return pygame.sprite.collide_rect(self, game_obj)
 
     def load_level(the_level):
         gameObjs.clear()
@@ -528,6 +509,28 @@ def game():
         elif not keys[K_j]:
             player.fall()
 
+        for obj in plate_objects:
+            collision = False
+            for objb in movebox_objects:
+                if obj.check_collision(objb):
+                    collision = True
+            if obj.check_collision(player):
+                collision = True
+            if collision and obj.type == "plateup":
+                if barrier_objects[int(obj.obj_num) - 1].get_type() == "ClosedBarrier":
+                    barrier_objects[int(obj.obj_num) - 1].set_type("OpenBarrier")
+                    obj.set_type('platedown')
+                    obj.update_position(0, 3)
+                    barrier_sound.play()
+                    fullupdate = True
+            if collision == False and obj.type == "platedown":
+                if barrier_objects[int(obj.obj_num) - 1].get_type() == "OpenBarrier":
+                    barrier_objects[int(obj.obj_num) - 1].set_type("ClosedBarrier")
+                    obj.set_type('plateup')
+                    obj.update_position(0,-3)
+                    barrier_sound.play()
+                    fullupdate = True
+
         for level_object in gameObjs:
             collided = player.check_collision(level_object)
             if collided == "GOAL":
@@ -553,6 +556,10 @@ def game():
             elif collided:
                 screen.blit(level_object.img, level_object.coordinates)
                 updates.append(level_object.rect)
+
+
+
+
 
         fps = pygame.time.Clock()
         fps.tick(80)
