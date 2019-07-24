@@ -29,6 +29,6 @@ wall empty empty helpbox:1 empty empty empty empty empty empty empty helpbox:2 e
 wall empty empty empty empty empty empty empty empty empty empty empty empty wall wall wall wall wall wall wall wall wall wall wall wall wall wall wall wall wall wall wall wall wall wall wall wall wall wall wall wall wall wall wall wall wall wall wall wall wall wall wall wall
 floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor floor
 level2.lvl
-Press A and D to move Left and Right
-Press J to Jump
-Reach the door to complete the level
+<<Press A and D to move Left and Right>>
+<<Press J to Jump>>
+<<Reach the door to complete the level>>

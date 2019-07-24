@@ -145,6 +145,18 @@ def continue_game():
         continued = False
     game()
 
+def GameOver():
+    goscreen = pygame.image.load("GameOver.jpg")
+    gameDisplay.blit(goscreen, (0,0))
+    pygame.display.flip()
+    while 1:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == K_q:
+                    sys.exit()
+
 
 def game():
     pygame.init()
@@ -425,8 +437,6 @@ def game():
                 objlist[a] = objlist[a-1]
             objlist[x] = obj
 
-
-
     # Source: opengameart.org
     # Name from source: Sara and Star
     # Artist: Mandi Paugh
@@ -442,14 +452,19 @@ def game():
 
     starttime = pygame.time.get_ticks()
     frames = 0
+    pausetime = 0
     while 1:
         updates = [pygame.Rect(100, 100, 500, 100)]
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 sys.exit()
             elif event.type == KEYDOWN:
-                if event.key == K_ESCAPE:
-                    sys.exit()
+                if event.key == K_ESCAPE or event.key == K_p:
+                    pausestart = pygame.time.get_ticks()
+                    pause()
+                    pausestop = pygame.time.get_ticks()
+                    pausetime += (pausestop - pausestart)
+                    fullupdate = True
 
                 elif event.key == K_c:
                     if characterpath == "./characters/Jill/":
@@ -461,6 +476,8 @@ def game():
                         player.img = pygame.image.load(characterpath + "Left.gif")
                     elif face_direction == 1:
                         player.img = pygame.image.load(characterpath + "Right.gif")
+
+                    fullupdate = True
                 
                 elif event.key == K_k:
                     if player.carrying[0] and not player.jumping and not player.falling:
@@ -487,9 +504,6 @@ def game():
                 elif event.key == K_s:
                     save_settings(current_level)
 
-                elif event.key == K_p:
-                    pause()
-                    fullupdate = True
 
         screen.blit(player.overwrite, player.coordinates)
         updates.append(player.rect[:])
@@ -544,13 +558,17 @@ def game():
                 if barrier_objects[obj.obj_num - 1].get_type() == "OpenBarrier":
                     barrier_objects[obj.obj_num - 1].set_type("ClosedBarrier")
                     obj.set_type('plateup')
-                    obj.update_position(0,-3)
+                    obj.update_position(0, -3)
                     barrier_sound.play()
                     fullupdate = True
 
         for level_object in gameObjs:
             collided = player.check_collision(level_object)
             if collided == "GOAL":
+
+                if next_level == "GAMEOVER":
+                    GameOver()
+
                 current_level = next_level
                 next_level, player.coordinates, helptext, levelname = load_level(next_level)
                 player.rect.x = int(player.coordinates.strip().split(", ")[0])
@@ -558,14 +576,9 @@ def game():
                 player.coordinates = player.rect.x, player.rect.y
                 starttime = pygame.time.get_ticks()
                 frames = 0
+                pausetime = 0
                 player.carrying[0] = False
                 fullupdate = True
-                print("barriers")
-                for x in barrier_objects:
-                    print(x.obj_num)
-                print("plates")
-                for x in plate_objects:
-                    print(x.obj_num)
             elif collided == "SWITCH" or collided == "PLATEDOWN":
                 fullupdate = True
             elif isinstance(collided, list):
@@ -591,11 +604,11 @@ def game():
         font = pygame.font.Font('freesansbold.ttf', 32)
         currtime = pygame.time.get_ticks()
         frames += 1
-        text = font.render(str(frames / ((currtime-starttime) / 1000)), True, green, blue)
+        text = font.render(str(frames / (((currtime-starttime) - pausetime) / 1000)), True, green, blue)
         screen.blit(text, (100, 100))
         #FPS PRINT STOP
 
-        seconds = (currtime - starttime) // 1000
+        seconds = ((currtime - starttime) - pausetime) // 1000
         if seconds < 60:
             text = font.render("Time: " + str(seconds) + "s", True, green, black)
         else:
@@ -625,7 +638,7 @@ def game():
             font = pygame.font.Font('freesansbold.ttf', 32)
             currtime = pygame.time.get_ticks()
             frames += 1
-            text = font.render(str(frames / ((currtime - starttime) / 1000)), True, green, blue)
+            text = font.render(str(frames / (((currtime - starttime)-pausetime) / 1000)), True, green, blue)
             screen.blit(text, (100, 100))
 
             if seconds < 60:
