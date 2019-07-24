@@ -381,6 +381,10 @@ def game():
 
     def load_level(the_level):
         gameObjs.clear()
+        plate_objects.clear()
+        barrier_objects.clear()
+        movebox_objects.clear()
+        switch_objects.clear()
         level = open("./levels/" + the_level)
         helptext = []
         for i, line in enumerate(level):
@@ -417,8 +421,7 @@ def game():
                             movebox_objects.append(new_object)
                         if new_object.type == 'greenswitch':
                             switch_objects.append(new_object)
-                        if new_object.type == 'wall':
-                            wall_objects.append(new_object)
+
         level.close()
         return nextlevel, starting_position, helptext, Levelname
 
@@ -499,11 +502,15 @@ def game():
                                 player.carrying[1].coordinates = player.carrying[1].rect.x, player.carrying[1].rect.y
 
                 elif event.key == K_r:
+                    next_level, player.coordinates, helptext, levelname = load_level(current_level)
+                    player.rect.x = int(player.coordinates.strip().split(", ")[0])
+                    player.rect.y = int(player.coordinates.strip().split(", ")[1])
+                    player.coordinates = player.rect.x, player.rect.y
+                    player.carrying[0] = False
                     fullupdate = True
 
                 elif event.key == K_s:
                     save_settings(current_level)
-
 
         screen.blit(player.overwrite, player.coordinates)
         updates.append(player.rect[:])
