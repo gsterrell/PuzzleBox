@@ -547,27 +547,40 @@ def game():
         elif not keys[K_j]:
             player.fall()
 
-        for obj in plate_objects:
-            collision = False
-            for objb in movebox_objects:
-                if obj.check_collision(objb):
-                    collision = True
-            if obj.check_collision(player):
-                collision = True
-            if collision and obj.type == "plateup":
-                if barrier_objects[int(obj.obj_num) - 1].get_type() == "ClosedBarrier":
-                    barrier_objects[int(obj.obj_num) - 1].set_type("OpenBarrier")
-                    obj.set_type('platedown')
-                    obj.update_position(0, 3)
-                    barrier_sound.play()
-                    fullupdate = True
-            if collision == False and obj.type == "platedown":
-                if barrier_objects[obj.obj_num - 1].get_type() == "OpenBarrier":
-                    barrier_objects[obj.obj_num - 1].set_type("ClosedBarrier")
-                    obj.set_type('plateup')
-                    obj.update_position(0, -3)
-                    barrier_sound.play()
-                    fullupdate = True
+        for obj in barrier_objects:
+            barrieropen = False
+            for objb in plate_objects:
+                if obj.obj_num == objb.obj_num:
+                    collision = False
+                    for objc in movebox_objects:
+                        if objb.check_collision(objc):
+                            collision = True
+
+                    if objb.check_collision(player):
+                        collision = True
+
+                    if collision and objb.type == "platedown":
+                        barrieropen = True
+
+                    elif collision and objb.type == "plateup":
+                        barrieropen = True
+                        objb.set_type('platedown')
+                        objb.update_position(0, 3)
+                        barrier_sound.play()
+                        fullupdate = True
+                    elif collision == False and objb.type == "platedown":
+                        objb.set_type('plateup')
+                        objb.update_position(0, -3)
+                        barrier_sound.play()
+                        fullupdate = True
+
+            if barrieropen and obj.type == "ClosedBarrier":
+                obj.set_type("OpenBarrier")
+                fullupdate = True
+
+            elif barrieropen == False and obj.type == "OpenBarrier":
+                obj.set_type("ClosedBarrier")
+                fullupdate = True
 
         for level_object in gameObjs:
             collided = player.check_collision(level_object)
@@ -600,12 +613,7 @@ def game():
                 screen.blit(level_object.img, level_object.coordinates)
                 updates.append(level_object.rect)
 
-
-
-
-
-        fps = pygame.time.Clock()
-        fps.tick(80)
+        clock.tick(80)
 
         #FPS PRINT START
         font = pygame.font.Font('freesansbold.ttf', 32)
