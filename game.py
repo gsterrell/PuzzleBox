@@ -390,7 +390,7 @@ def game():
                                                      unit_size * (i - 2)-4)
                             else:
                                 new_object = GameObj("./sprites/" + str(words[0]) + ".png", str(word[0]), unit_size * j, unit_size * (i - 2))
-                            new_object.obj_num = str(words[1])
+                            new_object.obj_num = int(words[1])
                             new_object.type = str(words[0])
                         else:
                             new_object = GameObj("./sprites/" + word + ".png", word, unit_size*j, unit_size*(i-2))
@@ -398,9 +398,9 @@ def game():
                         gameObjs.append(new_object)
 
                         if new_object.type == 'plateup':
-                            plate_objects.append(new_object)
+                            obj_insert(plate_objects, new_object)
                         if new_object.type == 'ClosedBarrier':
-                            barrier_objects.append(new_object)
+                            obj_insert(barrier_objects, new_object)
                         if new_object.type == 'movebox':
                             movebox_objects.append(new_object)
                         if new_object.type == 'greenswitch':
@@ -409,6 +409,23 @@ def game():
                             wall_objects.append(new_object)
         level.close()
         return nextlevel, starting_position, helptext, Levelname
+
+    def obj_insert(objlist, obj):
+        x = 0
+
+        while x < len(objlist):
+            if obj.obj_num < objlist[x].obj_num:
+                break
+            x += 1
+        if x == len(objlist):
+            objlist.append(obj)
+        else:
+            objlist.append(objlist[len(objlist)-1])
+            for a in range(len(objlist)-1, x, -1):
+                objlist[a] = objlist[a-1]
+            objlist[x] = obj
+
+
 
     # Source: opengameart.org
     # Name from source: Sara and Star
@@ -524,8 +541,8 @@ def game():
                     barrier_sound.play()
                     fullupdate = True
             if collision == False and obj.type == "platedown":
-                if barrier_objects[int(obj.obj_num) - 1].get_type() == "OpenBarrier":
-                    barrier_objects[int(obj.obj_num) - 1].set_type("ClosedBarrier")
+                if barrier_objects[obj.obj_num - 1].get_type() == "OpenBarrier":
+                    barrier_objects[obj.obj_num - 1].set_type("ClosedBarrier")
                     obj.set_type('plateup')
                     obj.update_position(0,-3)
                     barrier_sound.play()
@@ -543,6 +560,12 @@ def game():
                 frames = 0
                 player.carrying[0] = False
                 fullupdate = True
+                print("barriers")
+                for x in barrier_objects:
+                    print(x.obj_num)
+                print("plates")
+                for x in plate_objects:
+                    print(x.obj_num)
             elif collided == "SWITCH" or collided == "PLATEDOWN":
                 fullupdate = True
             elif isinstance(collided, list):
