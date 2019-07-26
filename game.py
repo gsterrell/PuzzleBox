@@ -25,6 +25,7 @@ clock = pygame.time.Clock()
 continued = False
 current_level = "level1.lvl"
 next_level = "level2.lvl"
+backgroundPath = "./background/"
 
 def pause():
     paused = True
@@ -90,6 +91,7 @@ def message_display(text):
 
 def game_intro():
     intro = True
+    backImg = pygame.image.load(backgroundPath + "background.jpg")
     while intro:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -97,9 +99,10 @@ def game_intro():
                 quit()
         gameDisplay.fill(backgroundIntro)
         largeText = pygame.font.Font('freesansbold.ttf',115)
-        TextSurf, TextRect = text_objects("Puzzle Game", largeText, black)
-        TextRect.center = ((width/2),(height/2))
-        gameDisplay.blit(TextSurf, TextRect)
+        #TextSurf, TextRect = text_objects("Puzzle Game", largeText, black)
+        #TextRect.center = ((width/2),(height/2))
+        #gameDisplay.blit(TextSurf, TextRect)
+        gameDisplay.blit((backImg), (0, 0))
         button("Start", 600, 450, 100, 50, green, bright_green, game)
         button("Continue", 600, 550, 100, 50, blue, bright_blue, continue_game)
         button("Quit", 600, 650, 100, 50, red, bright_red, quitgame)
