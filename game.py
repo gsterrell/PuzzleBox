@@ -25,7 +25,7 @@ clock = pygame.time.Clock()
 continued = False
 current_level = "level1.lvl"
 next_level = "level2.lvl"
-backgroundPath = "./background/"
+
 
 def pause():
     paused = True
@@ -91,7 +91,7 @@ def message_display(text):
 
 def game_intro():
     intro = True
-    backImg = pygame.image.load(backgroundPath + "background.jpg")
+    backImg = pygame.image.load("background.jpg")
     while intro:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
