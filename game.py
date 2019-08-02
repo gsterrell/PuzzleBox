@@ -173,7 +173,7 @@ def game():
     movebox_objects = []
     switch_objects = []
     plate_objects = []
-    wall_objects = []
+    teleporter_objects = []
 
     global current_level, next_level, continued
 
@@ -235,6 +235,17 @@ def game():
             self.max_accel = 30
             self.max_speed = 5
             self.carrying = [False]
+            self.teleported = False
+
+        def teleport(self, game_obj):
+            player.rect.x = game_obj.rect.x + 8
+            player.rect.y = game_obj.rect.y
+            player.coordinates = (player.rect.x, player.rect.y)
+            if player.carrying[0] == True:
+                player.carrying[1].rect.x = player.rect.x + 4
+                player.carrying[1].rect.y = player.rect.y - 24
+                player.carrying[1].coordinates = (player.carrying[1].rect.x, player.carrying[1].rect.y)
+            player.teleported = True
 
         def check_collision(self, game_obj):
             collided = pygame.sprite.collide_rect(self, game_obj)
@@ -386,6 +397,7 @@ def game():
         barrier_objects.clear()
         movebox_objects.clear()
         switch_objects.clear()
+        teleporter_objects.clear
         level = open("./levels/" + the_level)
         helptext = []
         for i, line in enumerate(level):
@@ -422,6 +434,8 @@ def game():
                             movebox_objects.append(new_object)
                         if new_object.type == 'greenswitch':
                             switch_objects.append(new_object)
+                        if new_object.type == 'Teleporter':
+                            obj_insert(teleporter_objects, new_object)
 
         level.close()
         return nextlevel, starting_position, helptext, Levelname
@@ -613,14 +627,19 @@ def game():
                     screen.blit(level_object.img, level_object.coordinates)
                     updates.append(level_object.rect)
             elif collided:
-                screen.blit(level_object.img, level_object.coordinates)
-                updates.append(level_object.rect)
+                if thing.type != 'Teleporter':
+                    screen.blit(level_object.img, level_object.coordinates)
+                    updates.append(level_object.rect)
+                else:
+                    pygame.draw.rect(screen, black, obj.rect)
+                    updates.append(obj.rect[:])
+                    screen.blit(obj.img, obj.coordinates)
 
-        clock.tick_busy_loop(80)
+        clock.tick_busy_loop(60)
 
         #FPS PRINT START
         font = pygame.font.Font('freesansbold.ttf', 32)
-        currtime = pygame.time.get_ticks()
+        currtime = pygame.time.get_ticks() + 1
         frames += 1
         text = font.render(str(frames / (((currtime-starttime) - pausetime) / 1000)), True, green, blue)
         screen.blit(text, (100, 100))
@@ -637,13 +656,29 @@ def game():
         screen.blit(text, (10, 680))
         updates.append(pygame.Rect(10, 680, 250, 30))
 
+        telecollision = False
+        for obj in teleporter_objects:
+            collided = obj.check_collision(player)
+            if collided and player.teleported == False and player.rect.x > obj.rect.x and player.rect.x < obj.rect.x + 12:
+                if obj.obj_num % 2 == 1:
+                    player.teleport(teleporter_objects[obj.obj_num])
+                    fullupdate = True
+                else:
+                    player.teleport(teleporter_objects[obj.obj_num - 2])
+                    fullupdate = True
+            if collided == True:
+                telecollision = True
+        if telecollision == False:
+            player.teleported = False
+
+
         if fullupdate == True:
             screen.fill(black)
             screen.blit(player.img, player.coordinates)
 
             for thing in gameObjs:
                 screen.blit(thing.img, thing.coordinates)
-                if thing.type == "helpbox":
+                if thing.type == "helpbox" and thing.type != 'Teleporter':
                     thing.collided = False
                     collided = player.check_collision(thing)
                     if collided:
@@ -673,6 +708,10 @@ def game():
                 screen.blit(player.carrying[1].img, player.carrying[1].coordinates)
 
             screen.blit(player.img, player.coordinates)
+            for obj in teleporter_objects:
+                updates.append(obj.rect[:])
+                screen.blit(obj.img, obj.coordinates)
+
             pygame.display.flip()
             fullupdate = False
 
@@ -682,4 +721,14 @@ def game():
             if player.carrying[0]:
                 screen.blit(player.carrying[1].img, player.carrying[1].coordinates)
                 updates.append(player.carrying[1].rect)
+
+            for obj in teleporter_objects:
+                collided = obj.check_collision(player)
+                if collided:
+                    pygame.draw.rect(screen, black, obj.rect)
+                    screen.blit(player.img, player.coordinates)
+                    updates.append(obj.rect[:])
+                    screen.blit(obj.img, obj.coordinates)
+
+
             pygame.display.update(updates)
